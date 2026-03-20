@@ -1,4 +1,4 @@
-FROM alpine:3.21 AS builder
+FROM alpine:3.23 AS builder
 
 ENV VERSION=2.2.0
 
@@ -12,7 +12,7 @@ RUN set -x \
     && make -j $(nproc) \
     && strip memtier_benchmark
 
-FROM alpine:3.21
+FROM alpine:3.23
 
 RUN set -x \
     && apk add --no-cache libevent libstdc++
