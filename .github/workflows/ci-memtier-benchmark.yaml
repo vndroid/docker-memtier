@@ -2,6 +2,9 @@ name: CI Build Memtier Benchmark
 on:
   push:
     branches: ['main']
+    paths:
+      - 'docker-entrypoint.sh'
+      - 'Dockerfile'
   schedule:
     - cron: '0 7 1 * *'
   workflow_dispatch:
