@@ -5,7 +5,7 @@ ENV VERSION=2.2.0
 WORKDIR /usr/local/src
 
 RUN set -x \
-    && apk add --no-cache git build-base autoconf automake libevent-dev pkgconf zlib-dev openssl-dev pcre-dev \
+    && apk add --no-cache autoconf automake build-base gawk git libevent-dev libtool openssl-dev pcre-dev pkgconf zlib-dev \
     && git clone -b ${VERSION} --single-branch --depth=1 https://github.com/RedisLabs/memtier_benchmark.git . \
     && autoreconf -ivf \
     && ./configure \
