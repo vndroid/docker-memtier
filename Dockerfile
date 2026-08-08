@@ -1,6 +1,6 @@
 FROM alpine:3.23 AS builder
 
-ENV VERSION=2.5.0
+ENV VERSION=2.5.1
 
 WORKDIR /usr/local/src
 
