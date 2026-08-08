@@ -9,8 +9,8 @@ on:
     - cron: '0 7 1 * *'
   workflow_dispatch:
 env:
-  REGISTRY: ghcr.io
-  ARTIFACTS: memtier-benchmark
+  REGISTRY: 'ghcr.io'
+  ARTIFACT: 'memtier-benchmark'
 jobs:
   prepare:
     name: Parse ARGs
@@ -23,7 +23,7 @@ jobs:
       pd_ver: ${{ steps.parse.outputs.pd_ver }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Parse ARGs from Repository
         id: parse
         shell: bash
@@ -33,21 +33,21 @@ jobs:
             echo "Error: No such file or directory"
             exit 1
           fi
-          OS_NME=$(grep -E '^FROM' Dockerfile | head -n 1 | sed 's/^FROM[[:space:]]\(.*\):\(.*\)[[:space:]]AS\(.*\)/\1/' | sed 's/^[[:space:]"]*//;s/[[:space:]"]*$//')
-          OS_VER=$(grep -E '^FROM' Dockerfile | head -n 1 | sed 's/^FROM[[:space:]]\(.*\):\(.*\)[[:space:]]AS\(.*\)/\2/' | sed 's/^[[:space:]"]*//;s/[[:space:]"]*$//')
-          AF_VER=$(grep -E '^ENV[[:space:]]VERSION' Dockerfile | head -n 1 | sed 's/^ENV[[:space:]]VERSION=\(.*\)/\1/' | sed 's/[^0-9.]//g')
+          OS_NAME=$(grep -E '^FROM' Dockerfile | head -n 1 | sed 's/^FROM[[:space:]]\(.*\):\(.*\)[[:space:]]AS\(.*\)/\1/' | sed 's/^[[:space:]"]*//;s/[[:space:]"]*$//')
+          OS_VERS=$(grep -E '^FROM' Dockerfile | head -n 1 | sed 's/^FROM[[:space:]]\(.*\):\(.*\)[[:space:]]AS\(.*\)/\2/' | sed 's/^[[:space:]"]*//;s/[[:space:]"]*$//')
+          AU_VERS=$(grep -E '^ENV[[:space:]]VERSION' Dockerfile | head -n 1 | sed 's/^ENV[[:space:]]VERSION=\(.*\)/\1/' | sed 's/[^0-9.]//g')
           # check if values are empty
-          if [ -z "$OS_NME" ] || [ -z "$OS_VER" ] || [ -z "$AF_VER" ]; then
+          if [ -z "$OS_NAME" ] || [ -z "$OS_VERS" ] || [ -z "$AU_VERS" ]; then
             echo "Error: One or more ARG values are empty"
             exit 1
           fi
           # echo results
-          echo "OS: '${OS_NME}'-'${OS_VER}'"
-          echo "'v${AF_VER}'"
+          echo "OS: '${OS_NAME}'-'${OS_VERS}'"
+          echo "AU: '${AU_VERS}'"
           # set outputs
-          echo "os_nme=${OS_NME}" >> $GITHUB_OUTPUT
-          echo "os_ver=${OS_VER}" >> $GITHUB_OUTPUT
-          echo "pd_ver=${AF_VER}" >> $GITHUB_OUTPUT
+          echo "os_nme=${OS_NAME}" >> $GITHUB_OUTPUT
+          echo "os_ver=${OS_VERS}" >> $GITHUB_OUTPUT
+          echo "pd_ver=${AU_VERS}" >> $GITHUB_OUTPUT
   build:
     name: Build and Push (${{ matrix.arch }})
     permissions:
@@ -64,7 +64,7 @@ jobs:
     needs: prepare
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
       - name: Login to ghcr.io
@@ -83,7 +83,7 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           push: true
-          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.ARTIFACTS }}:${{ steps.normalize.outputs.arch_tag }}
+          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.ARTIFACT }}:${{ steps.normalize.outputs.arch_tag }}
   merge:
     name: Create and Push Multi-Arch Manifest
     runs-on: ubuntu-24.04
@@ -102,9 +102,9 @@ jobs:
       - name: Create and Push Manifest linux/amd64, linux/arm64
         run: |
           docker buildx imagetools create \
-            --tag ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.ARTIFACTS }}:${{ needs.prepare.outputs.pd_ver }}-${{ needs.prepare.outputs.os_nme }}${{ needs.prepare.outputs.os_ver }} \
-            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.ARTIFACTS }}:amd64 \
-            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.ARTIFACTS }}:arm64
+            --tag ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.ARTIFACT }}:${{ needs.prepare.outputs.pd_ver }}-${{ needs.prepare.outputs.os_nme }}${{ needs.prepare.outputs.os_ver }} \
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.ARTIFACT }}:amd64 \
+            ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.ARTIFACT }}:arm64
   cleanup:
     name: Cleanup Obsoleting Tags
     runs-on: ubuntu-slim
@@ -120,7 +120,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           OWNER=${{ github.repository_owner }}
-          IMAGE=${{ env.ARTIFACTS }}
+          IMAGE=${{ env.ARTIFACT }}
           for TAG in "amd64" "arm64"; do
             VERSION_ID=$(gh api -H "Accept: application/vnd.github+json" \
               /users/$OWNER/packages/container/$IMAGE/versions \
@@ -139,4 +139,4 @@ jobs:
           delete-untagged: true
           owner: ${{ github.repository_owner }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          package: ${{ env.ARTIFACTS }}
+          package: ${{ env.ARTIFACT }}
