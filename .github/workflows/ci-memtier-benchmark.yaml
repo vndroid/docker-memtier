@@ -43,7 +43,7 @@ jobs:
           fi
           # echo results
           echo "OS: '${OS_NAME}'-'${OS_VERS}'"
-          echo "AU: '${AU_VERS}'"
+          echo "AU: 'memtier_benchmark'-'${AU_VERS}'"
           # set outputs
           echo "os_nme=${OS_NAME}" >> $GITHUB_OUTPUT
           echo "os_ver=${OS_VERS}" >> $GITHUB_OUTPUT
